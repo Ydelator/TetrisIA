@@ -77,6 +77,10 @@ var next_piece_atlas : Vector2i
 var board_layer : int = 0
 var active_layer : int = 1
 
+var col_height = [0,0,0,0,0,0,0,0,0,0]
+var compl_lines = 0
+var holes = [0,0,0,0,0,0,0,0,0,0]
+
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	new_game() # Replace with function body.
@@ -141,6 +145,9 @@ func move_piece(dir):
 			piece_atlas = next_piece_atlas
 			next_piece_type = pick_piece()
 			next_piece_atlas  = Vector2i(shapes_full.find(next_piece_type), 0)
+			calc_height()
+			calc_holes()
+			bumpiness()
 			clear_panel()
 			create_piece()
 			check_game_over()
@@ -212,6 +219,9 @@ func check_rows():
 
 func shift_rows(row):
 	var atlas
+	compl_lines = compl_lines + 1
+	for k in range(COLS):
+		col_height[k] = col_height[k] - 1
 	for i in range(row, 1, -1):
 		for j in range(COLS):
 			atlas = get_cell_atlas_coords(board_layer, Vector2i(j + 1, i - 1))
@@ -231,3 +241,40 @@ func check_game_over():
 			land_piece()
 			$GAME_HUD.get_node("GameOver").show()
 			game_running= false
+
+func calc_height():
+	for i in range(ROWS):
+		for j in range(COLS):
+			if not is_free(Vector2i(j + 1, i + 1)):
+				if col_height[j] > (20 - i):
+					pass
+				else: 
+					col_height[j] = 20 - i
+					print("Columna ", j, " : " , col_height[j])
+
+func calc_holes():
+	for i in range(ROWS):
+		for j in range(COLS):
+			if not is_free(Vector2i(j + 1, i + 1)):
+				var num_holes = 0
+				for k in (20-(i+1)):
+					var num = (i+1)+k
+					if is_free(Vector2i(j + 1, num + 1)):
+						num_holes = num_holes + 1
+					if num_holes > holes[j]:
+						holes[j] = num_holes
+				print("Hoyos en la columna ", j, ": ", holes[j])
+
+func bumpiness():
+	var bump = 0
+	for i in range(COLS):
+		var num = 0
+		if i == 9:
+			pass
+		else:
+			num = col_height[i] - col_height[i+1]
+		if num < 0:
+			num = num * (-1)
+		bump = bump + num
+	print("Bumpines: ", bump)
+	return bump
